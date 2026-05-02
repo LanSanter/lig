@@ -8,7 +8,7 @@ router = APIRouter(tags=["generate"])
 
 class GenerateRequest(BaseModel):
     user_input: str
-
+    
 
 @router.post("/generate")
 def generate(req: GenerateRequest) -> dict:

@@ -1,0 +1,24 @@
+{
+  "version": "2026-05-02",
+  "samples": [
+    {
+      "id": "tech_store_tensor",
+      "input": "昨天在 Google Store 問店員 Pixel 用什麼處理器，店員說 Tensor",
+      "scene": {
+        "location": "Google Store",
+        "characters": ["店員", "顧客"],
+        "event": "顧客詢問手機處理器"
+      },
+      "trigger": {
+        "source": "Tensor",
+        "misheard_as": "天色",
+        "explanation": "英文詞彙在噪音環境中被空耳成中文詞"
+      },
+      "output_style": {
+        "tone": ["荒謬", "感動"],
+        "closure": "台灣精神式收束"
+      },
+      "result_excerpt": "天色漸漸光，全店顧客忽然一起合唱..."
+    }
+  ]
+}

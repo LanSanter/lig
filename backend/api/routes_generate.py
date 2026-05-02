@@ -8,9 +8,7 @@ router = APIRouter(tags=["generate"])
 
 class GenerateRequest(BaseModel):
     user_input: str
-    provider: str = "openai"
-    api_token: str
-
+    
 
 @router.post("/generate")
 def generate(req: GenerateRequest) -> dict:

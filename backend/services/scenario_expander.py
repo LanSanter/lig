@@ -1,12 +1,14 @@
+import json
+
 from backend.schemas.input_profile import InputProfile
 from backend.schemas.scenario_option import ScenarioOption
+from backend.services.llm_client import default_model, generate_with_openai, load_prompt
 from backend.services.sample_loader import load_oneshot_samples
 
 
-def scenario_expander(profile: InputProfile) -> list[ScenarioOption]:
+def _fallback_options(profile: InputProfile) -> list[ScenarioOption]:
     dataset = load_oneshot_samples().get("samples", [])
     base = profile.raw_text.strip() or "日常場景"
-
     options: list[ScenarioOption] = []
     for idx, sample in enumerate(dataset[:3], start=1):
         trigger = sample.get("trigger", {})
@@ -23,18 +25,30 @@ def scenario_expander(profile: InputProfile) -> list[ScenarioOption]:
                 tone=tones,
             )
         )
-
-    if not options:
-        options.append(
-            ScenarioOption(
-                id="A",
-                title="便利商店覺醒",
-                scene=f"{base}，大夜班掃條碼後全店開始合唱。",
-                characters=["店員", "顧客"],
-                trigger_candidates=["barcode/八口"],
-                escalation_hint="貨架商品開始自發排隊",
-                tone=["日常", "感動"],
-            )
-        )
-
     return options
+
+
+def scenario_expander(profile: InputProfile) -> list[ScenarioOption]:
+    system_prompt = load_prompt("scenario_expander")
+    one_shot = load_oneshot_samples().get("samples", [])
+    user_prompt = json.dumps(
+        {
+            "user_input": profile.raw_text,
+            "missing_slots": profile.missing_slots,
+            "one_shot_samples": one_shot,
+            "instruction": "請輸出 ScenarioOption JSON array",
+        },
+        ensure_ascii=False,
+    )
+    raw = generate_with_openai(
+        provider="openai",
+        model=default_model("openai"),
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+    )
+
+    try:
+        parsed = json.loads(raw)
+        return [ScenarioOption(**item) for item in parsed]
+    except Exception:
+        return _fallback_options(profile)

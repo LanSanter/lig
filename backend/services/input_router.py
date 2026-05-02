@@ -2,6 +2,9 @@ from backend.schemas.input_profile import InputProfile
 from backend.services.scenario_expander import scenario_expander
 
 
+GENERIC_TONE_HINTS = ["感動", "荒謬", "熱血", "厭世", "溫柔"]
+
+
 def compute_sufficiency(profile: InputProfile) -> float:
     score = 0.0
     if profile.location:
@@ -18,15 +21,19 @@ def compute_sufficiency(profile: InputProfile) -> float:
 
 
 def extract_profile(raw_text: str) -> InputProfile:
-    profile = InputProfile(raw_text=raw_text)
-    if "在" in raw_text:
-        profile.location = "未明地點"
-    if len(raw_text) >= 20:
-        profile.event = raw_text[:40]
-    if "店員" in raw_text:
-        profile.characters.append("店員")
-    if "Tensor" in raw_text or "天色" in raw_text:
-        profile.trigger_candidates.append("Tensor/天色")
+    text = raw_text.strip()
+    profile = InputProfile(raw_text=text)
+
+    words = [w for w in text.replace("，", " ").replace(",", " ").split() if w]
+    profile.key_terms = words[:6]
+
+    for tone in GENERIC_TONE_HINTS:
+        if tone in text:
+            profile.tone.append(tone)
+
+    if len(words) >= 2:
+        profile.event = " ".join(words[: min(10, len(words))])
+
     profile.missing_slots = [
         slot for slot, value in {
             "location": profile.location,
@@ -42,10 +49,9 @@ def extract_profile(raw_text: str) -> InputProfile:
 
 def route_input(raw_text: str) -> dict:
     profile = extract_profile(raw_text)
-    if profile.sufficiency_score >= 0.65:
-        return {"mode": "direct_generate", "profile": profile}
+    options = scenario_expander(profile)
     return {
         "mode": "ask_user_to_choose",
         "profile": profile,
-        "options": scenario_expander(profile),
+        "options": options,
     }

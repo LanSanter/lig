@@ -43,3 +43,11 @@ npm run dev
 
 - 架構說明：`docs/architecture.md`
 - 部署流程：`docs/deployment.md`
+
+
+## 後端 API Token 設定
+
+- 前端不需要輸入 API Token。
+- 前端也不需要傳送 provider，後端固定使用 OpenAI。
+- 請在後端 `.env` 設定 `OPENAI_API_KEY`。
+- 可選設定 `OPENAI_MODEL`，未設定預設 `gpt-4.1-mini`。

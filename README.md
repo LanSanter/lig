@@ -33,6 +33,12 @@ npm install
 npm run dev
 ```
 
+## One-shot Samples
+
+- 範例檔案：`backend/data/oneshot_samples.json`
+- 載入程式：`backend/services/sample_loader.py`
+- 作用：scenario 與 generate 服務會讀取樣本進行動態輸出。
+
 ## 文件入口
 
 - 架構說明：`docs/architecture.md`

@@ -15,7 +15,8 @@
 - `backend/services/`：
   - `input_router.py`：`compute_sufficiency` + `route_input`。
   - `scenario_expander.py`：資訊不足時產出 3~5 選項（目前實作為 2 筆示例）。
-  - `draft_generator.py`：範例生成結果與 trigger metadata。
+  - `sample_loader.py`：載入 `backend/data/oneshot_samples.json` one-shot 樣本。
+  - `draft_generator.py`：依使用者輸入與 one-shot 匹配結果動態生成文字與 warnings。
 - `backend/schemas/`：`InputProfile`, `ScenarioOption`, `GenerationPlan`, `GenerationResult`。
 
 ## 3. Frontend 模組
@@ -37,3 +38,9 @@
 - Token 僅作為 API 請求參數傳遞，不持久化。
 - `banned_patterns.json` 為風險詞預留規則集。
 - 結果回傳 `warnings` 陣列，供前端顯示黃色提示標籤。
+
+
+## 6. One-shot Sample 資料
+- 檔案：`backend/data/oneshot_samples.json`
+- 載入方法：`backend/services/sample_loader.py` 的 `load_oneshot_samples()`（記憶體快取）。
+- 用途：提供 `scenario_expander` 與 `draft_generator` 在不同輸入下產生可變輸出，而非固定回傳。

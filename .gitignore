@@ -4,6 +4,6 @@ __pycache__/
 *.pyc
 
 # Ignore frontend build files
-/dist/
-/node_modules/
+dist/
+node_modules/
 

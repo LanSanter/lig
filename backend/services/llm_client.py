@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import os
+from openai import OpenAI
+from dotenv import load_dotenv
 from pathlib import Path
 
-PROMPT_DIR = Path(__file__).resolve().parent.parent / "prompts"
+
+backend_dir = Path(__file__).resolve().parent.parent # 根據你的目錄結構調整
+PROMPT_DIR = backend_dir / "prompts"
+load_dotenv(backend_dir / ".env")
 
 
 def load_prompt(name: str) -> str:
@@ -20,23 +25,23 @@ def _resolve_api_key(provider: str) -> str:
     raise ValueError(f"Unsupported provider: {provider}")
 
 
-def generate_with_openai(*, provider: str, model: str, system_prompt: str, user_prompt: str) -> str:
+def generate_with_openai(*, model: str, system_prompt: str, user_prompt: str) -> str:
     """Call OpenAI Responses API using server-side API key from environment."""
     try:
-        api_token = _resolve_api_key(provider)
-        from openai import OpenAI  # type: ignore
+        api_token = _resolve_api_key("openai")
 
         client = OpenAI(api_key=api_token)
-        response = client.responses.create(
+        response = client.chat.completions.create(
             model=model,
-            input=[
+            messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            max_output_tokens=900,
+            max_tokens=900,
         )
-        return response.output_text
-    except Exception:
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"LLM Error: {e}")
         return (
             "[LLM_FALLBACK]\n"
             f"system={system_prompt[:120]}...\n"

@@ -29,26 +29,38 @@ def _fallback_options(profile: InputProfile) -> list[ScenarioOption]:
 
 
 def scenario_expander(profile: InputProfile) -> list[ScenarioOption]:
-    system_prompt = load_prompt("scenario_expander")
-    one_shot = load_oneshot_samples().get("samples", [])
-    user_prompt = json.dumps(
-        {
-            "user_input": profile.raw_text,
-            "missing_slots": profile.missing_slots,
-            "one_shot_samples": one_shot,
-            "instruction": "請輸出 ScenarioOption JSON array",
-        },
-        ensure_ascii=False,
+    # 第一步：使用 Trigger Miner 挖掘關鍵點
+    trigger_miner_prompt = load_prompt("trigger_miner")
+    miner_input = {
+        "scene": profile.event or profile.raw_text,
+        "key_terms": profile.key_terms
+    }
+    
+    raw_triggers = generate_with_openai(
+        model="gpt-4.1-mini",
+        system_prompt=trigger_miner_prompt,
+        user_prompt=json.dumps(miner_input, ensure_ascii=False)
     )
-    raw = generate_with_openai(
-        provider="openai",
-        model=default_model("openai"),
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
+    
+    # 第二步：將挖掘到的梗餵給 Scenario Expander 擴展選項
+    expander_system_prompt = load_prompt("scenario_expander")
+    user_context = {
+        "user_input": profile.raw_text,
+        "extracted_triggers": raw_triggers, # 讓 AI 根據這些梗來設計場景
+        "missing_slots": profile.missing_slots,
+        "instruction": "請參考 extracted_triggers 中的諧音梗，設計 3-5 個荒謬且熱血的情境選項。輸出 JSON array。"
+    }
+
+    raw_scenarios = generate_with_openai(
+        model="gpt-4.1-mini",
+        system_prompt=expander_system_prompt,
+        user_prompt=json.dumps(user_context, ensure_ascii=False)
     )
 
     try:
-        parsed = json.loads(raw)
+        parsed = json.loads(raw_scenarios)
+        print("Parsed scenarios:", parsed)  # Debug log
         return [ScenarioOption(**item) for item in parsed]
-    except Exception:
+    except Exception as e:
+        print("Error message:", e)
         return _fallback_options(profile)

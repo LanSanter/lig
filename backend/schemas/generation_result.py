@@ -14,3 +14,10 @@ class GenerationResult(BaseModel):
     trigger_used: TriggerCandidate
     safety_passed: bool
     warnings: list[str] = Field(default_factory=list)
+
+
+class GenerateRequest(BaseModel):
+    user_input: str
+    characters: list[str]
+    trigger: str
+    tone: list[str]

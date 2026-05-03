@@ -1,50 +1,38 @@
+import json
 from backend.schemas.input_profile import InputProfile
 from backend.services.scenario_expander import scenario_expander
+from backend.services.llm_client import generate_with_openai, load_prompt
 
-
-GENERIC_TONE_HINTS = ["感動", "荒謬", "熱血", "厭世", "溫柔"]
-
-
-def compute_sufficiency(profile: InputProfile) -> float:
-    score = 0.0
-    if profile.location:
-        score += 0.20
-    if profile.characters:
-        score += 0.20
-    if profile.event:
-        score += 0.25
-    if profile.key_terms or profile.trigger_candidates:
-        score += 0.25
-    if profile.tone or profile.style:
-        score += 0.10
-    return score
 
 
 def extract_profile(raw_text: str) -> InputProfile:
-    text = raw_text.strip()
-    profile = InputProfile(raw_text=text)
+    # 1. 呼叫 AI 進行情境解析
+    system_prompt = load_prompt("scene_analyzer")
+    raw_response = generate_with_openai(
+        model="gpt-4.1-mini",
+        system_prompt=system_prompt,
+        user_prompt=f"使用者輸入：{raw_text}"
+    )
+    
+    try:
+        data = json.loads(raw_response)
+        # 將 AI 抽取的結果轉為 InputProfile 物件
+        profile = InputProfile(raw_text=raw_text, **data)
+    except Exception:
+        # Fallback 機制：至少維持 raw_text
+        profile = InputProfile(raw_text=raw_text)
 
-    words = [w for w in text.replace("，", " ").replace(",", " ").split() if w]
-    profile.key_terms = words[:6]
-
-    for tone in GENERIC_TONE_HINTS:
-        if tone in text:
-            profile.tone.append(tone)
-
-    if len(words) >= 2:
-        profile.event = " ".join(words[: min(10, len(words))])
-
+    # 2. 判斷缺失欄位與計算分數 (邏輯維持計畫書定義)
     profile.missing_slots = [
         slot for slot, value in {
             "location": profile.location,
             "characters": profile.characters,
             "event": profile.event,
             "trigger_candidates": profile.trigger_candidates,
-        }.items()
-        if not value
+        }.items() if not value
     ]
-    profile.sufficiency_score = compute_sufficiency(profile)
     return profile
+
 
 
 def route_input(raw_text: str) -> dict:

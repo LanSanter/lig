@@ -1,57 +1,53 @@
 <template>
-  <div class="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-    <!-- 提示標題區 -->
-    <div class="p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-center gap-3">
-      <span class="text-xl">🤔</span>
-      <p class="text-blue-800 text-sm font-medium">目前的靈感還能更具體一點，請挑選一個發展方向：</p>
+  <div class="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700 w-full">
+    <div class="p-5 bg-emerald-100 border border-emerald-200 rounded-2xl flex items-center gap-4 shadow-sm">
+      <span class="text-3xl">💡</span>
+      <p class="text-emerald-900 font-bold text-lg">目前的靈感還能更具體一點，請挑選一個發展方向：</p>
     </div>
     
-    <!-- 情境卡片列表 -->
-    <div class="grid gap-4">
+    <!-- 使用 Grid 並統一高度 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div 
         v-for="opt in options" :key="opt.id"
-        class="flex flex-col"
+        class="flex flex-col h-full"
       >
-        <!-- 情境卡片主體 -->
         <button 
           @click="toggleSelection(opt.id)"
           :class="[
-            'text-left p-5 bg-white border-2 transition-all group relative overflow-hidden rounded-2xl',
-            selectedId === opt.id ? 'border-blue-500 shadow-md ring-2 ring-blue-100' : 'border-slate-100 hover:border-blue-300'
+            'text-left p-6 bg-white border-2 transition-all group relative overflow-hidden rounded-3xl flex-1 flex flex-col h-full min-h-[220px]',
+            selectedId === opt.id ? 'border-emerald-500 shadow-xl ring-4 ring-emerald-500/10' : 'border-slate-100 hover:border-emerald-300 shadow-md'
           ]"
         >
-          <div class="flex justify-between items-start mb-2">
-            <h3 class="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{{ opt.title }}</h3>
-            <span class="text-[10px] bg-slate-100 px-2 py-1 rounded-md uppercase font-black text-slate-500 group-hover:bg-blue-600 group-hover:text-white">Option {{ opt.id }}</span>
+          <div class="flex justify-between items-start mb-4">
+            <h3 class="font-black text-xl text-slate-800 group-hover:text-emerald-600 transition-colors leading-tight">{{ opt.title }}</h3>
+            <span class="text-xs bg-slate-100 px-3 py-1 rounded-full font-black text-slate-500 group-hover:bg-emerald-600 group-hover:text-white shrink-0">#{{ opt.id }}</span>
           </div>
-          <p class="text-slate-600 text-sm leading-relaxed mb-3">{{ opt.scene }}</p>
           
-          <div class="flex flex-wrap gap-2 mb-1">
-            <span v-for="tag in opt.tone" :key="tag" class="text-[10px] bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-100">
-              #{{ tag }}
+          <!-- 讓內容撐開，使底部標籤對齊 -->
+          <p class="text-slate-600 text-sm leading-relaxed mb-6 flex-1 line-clamp-4">{{ opt.scene }}</p>
+          
+          <div class="flex flex-wrap gap-2 mt-auto">
+            <span v-for="tag in opt.tone" :key="tag" class="text-[10px] bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full border border-emerald-100 font-bold">
+              {{ tag }}
             </span>
           </div>
         </button>
 
-        <!-- 選中後展開的微調區塊 (User Revision) -->
-        <transition 
-          enter-active-class="transition duration-200 ease-out"
-          enter-from-class="transform -translate-y-2 opacity-0"
-          enter-to-class="transform translate-y-0 opacity-100"
-        >
-          <div v-if="selectedId === opt.id" class="mt-2 p-4 bg-white border-2 border-blue-500 border-dashed rounded-2xl space-y-3 mx-2">
-            <label class="block text-xs font-bold text-blue-600 uppercase tracking-wider">自定義微調 (選填)</label>
+        <!-- 微調區塊 -->
+        <transition name="expand">
+          <div v-if="selectedId === opt.id" class="mt-4 p-5 bg-white border-2 border-emerald-500 border-dashed rounded-3xl space-y-4 shadow-lg">
+            <label class="block text-sm font-black text-emerald-600 uppercase tracking-widest">自定義微調</label>
             <textarea 
               v-model="userRevision" 
-              rows="2"
-              placeholder="例如：加一點爆肝感、讓結局更中二一點...[cite: 1]"
-              class="w-full text-sm border-slate-200 rounded-xl focus:ring-blue-500 focus:border-blue-500 resize-none p-3 bg-slate-50"
+              rows="3"
+              placeholder="加一點熱血感..."
+              class="w-full text-base border-slate-100 rounded-xl focus:ring-emerald-500 focus:border-emerald-500 resize-none p-4 bg-slate-50"
             ></textarea>
             <button 
               @click="confirmSelection(opt)"
-              class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98]"
+              class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl shadow-lg transition-all active:scale-95"
             >
-              確認並生成複製文
+              確認並生成
             </button>
           </div>
         </transition>
@@ -59,6 +55,11 @@
     </div>
   </div>
 </template>
+
+<style scoped>
+.expand-enter-active, .expand-leave-active { transition: all 0.3s ease; }
+.expand-enter-from, .expand-leave-to { opacity: 0; transform: translateY(-10px); }
+</style>
 
 <script setup>
 import { ref } from 'vue';
@@ -94,6 +95,12 @@ const confirmSelection = (option) => {
     ? `${option.scene} (額外要求：${userRevision.value})`
     : option.scene;
 
-  emit('select', finalPrompt); // 回傳拼接後的字串[cite: 1]
+
+  emit('select', {
+    final_prompt: finalPrompt,             // 拼接後的內容
+    characters: option.characters,         // 角色清單
+    trigger: option.trigger_candidates[0], // 預計使用的觸發梗
+    tone: option.tone                      // 風格色調[cite: 1]
+  }); // 回傳拼接後的字串[cite: 1]
 };
 </script>

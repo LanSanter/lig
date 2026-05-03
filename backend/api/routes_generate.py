@@ -2,15 +2,14 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from backend.services.draft_generator import generate_result
+from backend.schemas.generation_result import GenerateRequest, GenerationResult
 
 router = APIRouter(tags=["generate"])
 
 
-class GenerateRequest(BaseModel):
-    user_input: str
-    
 
-@router.post("/generate")
-def generate(req: GenerateRequest) -> dict:
-    result = generate_result(req.user_input)
-    return result.model_dump()
+@router.post("/generate", response_model=GenerationResult)
+def generate(req: GenerateRequest) -> GenerationResult:
+    result = generate_result(req)
+    print(f"生成結果: {result}")
+    return result
